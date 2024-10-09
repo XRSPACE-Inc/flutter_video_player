@@ -106,6 +106,12 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
     ExoPlayer exoPlayer = exoPlayerProvider.get();
     exoPlayer.setMediaItem(mediaItem);
     exoPlayer.prepare();
+    exoPlayer.setTrackSelectionParameters(
+      exoPlayer
+        .getTrackSelectionParameters()
+        .buildUpon()
+        .setMaxVideoSizeSd()
+        .build());
 
     exoPlayer.setVideoSurface(surfaceProducer.getSurface());
 

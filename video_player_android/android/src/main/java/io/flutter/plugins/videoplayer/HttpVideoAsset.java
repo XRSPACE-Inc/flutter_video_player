@@ -17,11 +17,20 @@ import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.exoplayer.source.MediaSource;
+import androidx.media3.database.DatabaseProvider;
+import androidx.media3.database.StandaloneDatabaseProvider;
+import androidx.media3.datasource.cache.SimpleCache;
+import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor;
+import androidx.media3.datasource.cache.CacheDataSource;
+import androidx.media3.datasource.cache.Cache;
 import java.util.Map;
+import java.io.File;
 
 final class HttpVideoAsset extends VideoAsset {
   private static final String DEFAULT_USER_AGENT = "ExoPlayer";
   private static final String HEADER_USER_AGENT = "User-Agent";
+  private static DatabaseProvider databaseProvider;
+  private static Cache cache;
 
   @NonNull private final StreamingFormat streamingFormat;
   @NonNull private final Map<String, String> httpHeaders;
@@ -75,12 +84,23 @@ final class HttpVideoAsset extends VideoAsset {
   MediaSource.Factory getMediaSourceFactory(
       Context context, DefaultHttpDataSource.Factory initialFactory) {
     String userAgent = DEFAULT_USER_AGENT;
+    if (databaseProvider == null) {
+      databaseProvider = new StandaloneDatabaseProvider(context);
+      cache = new SimpleCache(
+        new File(context.getCacheDir(), "media"),
+        new LeastRecentlyUsedCacheEvictor(100 * 1024 * 1024), // 100MB
+        databaseProvider);
+    }
+
     if (!httpHeaders.isEmpty() && httpHeaders.containsKey(HEADER_USER_AGENT)) {
       userAgent = httpHeaders.get(HEADER_USER_AGENT);
     }
     unstableUpdateDataSourceFactory(initialFactory, httpHeaders, userAgent);
     DataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(context, initialFactory);
-    return new DefaultMediaSourceFactory(context).setDataSourceFactory(dataSourceFactory);
+    DataSource.Factory cacheDataSourceFactory = new CacheDataSource.Factory()
+      .setCache(cache)
+      .setUpstreamDataSourceFactory(dataSourceFactory);
+    return new DefaultMediaSourceFactory(context).setDataSourceFactory(cacheDataSourceFactory);
   }
 
   // TODO: Migrate to stable API, see https://github.com/flutter/flutter/issues/147039.

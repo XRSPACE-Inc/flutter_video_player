@@ -268,6 +268,10 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
   self = [super init];
   NSAssert(self, @"super init cannot be nil");
 
+  // Reference: https://medium.com/@sojik/avplayer-video-optimization-part-1-2a45ea002ea2
+  item.preferredForwardBufferDuration = 1.0;
+  item.canUseNetworkResourcesForLiveStreamingWhilePaused = false;
+
   _registrar = registrar;
   _frameUpdater = frameUpdater;
 
