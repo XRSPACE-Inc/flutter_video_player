@@ -102,7 +102,7 @@ void main() {
 
     setUp(() {
       log = _ApiLogger();
-      TestHostVideoPlayerApi.setUp(log);
+      TestHostVideoPlayerApi.setup(log);
     });
 
     test('init', () async {
